@@ -209,7 +209,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       //   resizeText()
       // });
 
-
+      window.electron.onUpdateAvailable(() => {
+        console.log('Update available!');
+        // Show a notification or prompt to the user
+      });
+      
+      window.electron.onUpdateDownloaded(() => {
+        console.log('Update downloaded!');
+        // Optionally, prompt the user to restart the app
+      });
   
       window.electron.receive('fromMain', (data) => {
         console.log(data);

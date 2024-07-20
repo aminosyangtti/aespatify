@@ -1,6 +1,13 @@
-const { app, shell,BrowserWindow, ipcMain, screen } = require('electron');
+const { app, shell, BrowserWindow, ipcMain, screen, dialog } = require('electron');
 const path = require('path');
 const expressApp = require('./backend/server'); // Adjust the path
+
+const { autoUpdater } = require('electron-updater');
+const log = require('electron-log');
+
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+log.info('App starting...');
 
 app.commandLine.appendSwitch('enable-transparent-visuals');
 app.commandLine.appendSwitch('disable-gpu');
@@ -40,7 +47,7 @@ const onAppReady = function () {
 
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: true,
+      nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
       nodeIntegration: false,
@@ -63,59 +70,6 @@ const onAppReady = function () {
 
 
   autoUpdater.checkForUpdatesAndNotify();
-
-
-  mainWindow.setMinimumSize(430, 180);
-
-  mainWindow.on('resize', () => {
-    const { width, height } = mainWindow.getBounds();
-    mainWindow.webContents.send('window-resized', { width, height });
-  });
-
-  
-  ipcMain.on('resize-window', (event) => {
-    const { width, height } = mainWindow.getBounds();
-
-    if (width) {
-      if (width >= 430 && height >= 180 && height < 280 ) {
-        mainWindow.setSize(430, 280);
-      } else if (width >= 430 && height >= 280 && width < 640 && height < 640) {
-        mainWindow.setSize(640, 640);
-  
-      } else {
-        mainWindow.setSize(430, 180)
-      }
-    }
-    
-    
-
-  });
-  ipcMain.on('set-position', (event) => {
-    const primaryDisplay = screen.getPrimaryDisplay();
-    const { width, height } = primaryDisplay.workAreaSize
-
-    mainWindow.setPosition(width - 430, 100);
-  });
-  ipcMain.on('minimize-window', () => {
-    mainWindow.minimize();
-  });
-
-  ipcMain.on('open-auth-url', (event, url) => {
-    shell.openExternal(url);
-  });
-  
-
-  ipcMain.on('close-window', () => {
-    mainWindow.close();
-  });
-
-  ipcMain.on('toMain', (event, data) => {
-    console.log('Received in main:', data);
-  });
-}
-
-app.on('ready', () => {
-  createWindow();
 
   autoUpdater.on('update-available', (info) => {
     log.info('Update available.');
@@ -146,13 +100,66 @@ app.on('ready', () => {
       message: 'Error in auto-updater: ' + err,
     });
   });
+
+
+  mainWindow.setMinimumSize(430, 180);
+
+  mainWindow.on('resize', () => {
+    const { width, height } = mainWindow.getBounds();
+    mainWindow.webContents.send('window-resized', { width, height });
+  });
+
+  
+  ipcMain.on('resize-window', (event) => {
+    const { width, height } = mainWindow.getBounds();
+  
+    if (width >= 430 && height >= 180 && height < 280) {
+      mainWindow.setSize(430, 280);
+    } else if (width >= 430 && height >= 280 && width < 640 && height < 640) {
+      mainWindow.setSize(640, 640);
+    } else {
+      mainWindow.setSize(430, 180);
+    }
+  });
+
+
+  ipcMain.on('set-position', (event) => {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width, height } = primaryDisplay.workAreaSize
+
+    mainWindow.setPosition(width - 430, 100);
+  });
+  ipcMain.on('minimize-window', () => {
+    mainWindow.minimize();
+  });
+
+  ipcMain.on('open-auth-url', (event, url) => {
+    shell.openExternal(url);
+  });
+  
+
+  ipcMain.on('close-window', () => {
+    mainWindow.close();
+  });
+
+  ipcMain.on('toMain', (event, data) => {
+    console.log('Received in main:', data);
+  });
+}
+
+app.on('ready', () => {
+
+  setTimeout(onAppReady,1000);  // fix for the electron transparent bg bug
+
+  
 });
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
+    onAppReady();
   }
 });
+
 
 
 app.on('window-all-closed', function () {
@@ -168,4 +175,6 @@ ipcMain.on('restart-app', () => {
 // Integrate Express server
 expressApp.listen(3001, () => {
   console.log('Express server running on http://localhost:3001');
+}).on('error', (err) => {
+  console.error('Express server error:', err);
 });

@@ -11,6 +11,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "dotenv": "^8.2.0",
+    "electron-log": "^5.1.6",
     "electron-updater": "^6.2.1",
     "express": "^4.17.1",
     "node-fetch": "^2.6.1",
@@ -32,7 +33,6 @@
       "target": "nsis",
       "icon": "build/logo_blk.png"
     },
-
     "publish": [
       {
         "provider": "github",
