@@ -1,25 +1,33 @@
-name: Build and Deploy
+name: Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*.*.*'  # Trigger on version tags
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Install dependencies
-        run: npm install
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
 
-      - name: Build
-        run: npm run build
+    - name: Install dependencies
+      run: npm install
 
-      - name: Deploy
-        run: ./deploy.sh
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+    - name: Generate Changelog
+      run: npx auto-changelog
+
+    - name: Build
+      run: npm run build
+
+    - name: Publish
+      run: npm run publish
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
