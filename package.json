@@ -1,6 +1,6 @@
 {
-  "name": "Aespatify",
-  "version": "1.0.1",
+  "name": "aespatify",
+  "version": "1.0.2",
   "description": "Electron app with Spotify integration",
   "main": "main.js",
   "scripts": {
@@ -22,7 +22,7 @@
     "electron-osx-sign": "^0.6.0",
     "electron-reload": "^1.5.0"
   },
-  "author": "aminosyangtti <aespatify@example.com>",
+  "author": "aminosyangtti <aminosyangtti@example.com>",
   "build": {
     "appId": "com.aespatify.id",
     "productName": "Aespatify",
