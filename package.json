@@ -5,8 +5,10 @@
   "main": "main.js",
   "scripts": {
     "start": "NODE_ENV=development electron .",
+    "changelog": "auto-changelog -p",
     "pack": "electron-builder --dir",
-    "build": "electron-builder --win"
+    "build": "electron-builder --win",
+    "publish": "electron-builder --win --publish always"
   },
   "dependencies": {
     "axios": "^0.21.1",
@@ -33,6 +35,14 @@
       "target": "nsis",
       "icon": "build/logo_blk.png"
     },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/logo_blk.png"
+    },
+    
     "publish": [
       {
         "provider": "github",
