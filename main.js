@@ -60,6 +60,11 @@ const onAppReady = function () {
   // mainWindow.webContents.openDevTools();
   // mainWindow.webContents.openDevTools({mode:'undocked'})
 
+
+
+  autoUpdater.checkForUpdatesAndNotify();
+
+
   mainWindow.setMinimumSize(430, 180);
 
   mainWindow.on('resize', () => {
@@ -109,7 +114,39 @@ const onAppReady = function () {
   });
 }
 
-app.on('ready', () => setTimeout(onAppReady, 1000));
+app.on('ready', () => {
+  createWindow();
+
+  autoUpdater.on('update-available', (info) => {
+    log.info('Update available.');
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update available',
+      message: 'A new update is available. Downloading now...',
+    });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    log.info('Update downloaded.');
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update ready',
+      message: 'A new update is ready. It will be installed on restart. Restart now?',
+      buttons: ['Yes', 'Later']
+    }).then((returnValue) => {
+      if (returnValue.response === 0) autoUpdater.quitAndInstall();
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    log.error('Error in auto-updater. ' + err);
+    dialog.showMessageBox({
+      type: 'error',
+      title: 'Update error',
+      message: 'Error in auto-updater: ' + err,
+    });
+  });
+});
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {

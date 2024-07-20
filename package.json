@@ -4,13 +4,14 @@
   "description": "Electron app with Spotify integration",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "NODE_ENV=development electron .",
     "pack": "electron-builder --dir",
     "build": "electron-builder --win"
   },
   "dependencies": {
     "axios": "^0.21.1",
     "dotenv": "^8.2.0",
+    "electron-updater": "^6.2.1",
     "express": "^4.17.1",
     "node-fetch": "^2.6.1",
     "node-vibrant": "^3.2.1-alpha.1",
@@ -20,7 +21,8 @@
     "electron": "^13.1.7",
     "electron-builder": "^24.13.3",
     "electron-osx-sign": "^0.6.0",
-    "electron-reload": "^1.5.0"
+    "electron-reload": "^1.5.0",
+    "electron-updater": "^4.3.8"
   },
   "author": "aminosyangtti <aminosyangtti@example.com>",
   "build": {
@@ -30,6 +32,14 @@
       "target": "nsis",
       "icon": "build/logo_blk.png"
     },
+
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "aminosyangtti",
+        "repo": "aespatify"
+      }
+    ],
     "directories": {
       "buildResources": "build",
       "output": "dist"
