@@ -1,9 +1,8 @@
-name: Release
+name: Nightly Build
 
 on:
-  push:
-    tags:
-      - 'v*'
+  schedule:
+    - cron: '0 0 * * *' # Runs every day at midnight
 
 jobs:
   build:
@@ -38,17 +37,25 @@ jobs:
     - name: Build Electron app
       run: npm run build -- --${{ matrix.platform }}
 
+    - name: Create Nightly Tag
+      id: create_tag
+      run: |
+        date=$(date +'%Y%m%d')
+        tag_name="nightly-$date"
+        git tag $tag_name
+        git push origin $tag_name
+
     - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        tag_name: ${{ steps.create_tag.outputs.tag_name }}
+        release_name: Nightly Build ${{ steps.create_tag.outputs.tag_name }}
         body_path: ./CHANGELOG.md
         draft: false
-        prerelease: false
+        prerelease: true
 
     - name: Upload Release Assets
       uses: actions/upload-release-asset@v1

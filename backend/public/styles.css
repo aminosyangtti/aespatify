@@ -308,7 +308,7 @@ align-items: center;
   width: 0%;
   line-height: 10px;
   border-radius: 20px;
-  transition: all 1500ms ease-in-out;
+  transition: all 1500ms ease;
 }
 
 

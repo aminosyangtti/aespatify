@@ -12,6 +12,7 @@ log.info('App starting...');
 app.commandLine.appendSwitch('enable-transparent-visuals');
 app.commandLine.appendSwitch('disable-gpu');
 
+
 const onAppReady = function () {
 
   const primaryDisplay = screen.getPrimaryDisplay();

@@ -47,7 +47,8 @@
       {
         "provider": "github",
         "owner": "aminosyangtti",
-        "repo": "aespatify"
+        "repo": "aespatify",
+        "token": "${GH_TOKEN}"
       }
     ],
     "directories": {
