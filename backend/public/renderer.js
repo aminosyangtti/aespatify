@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       startDataUpdates()
       clearInterval(intervalId)
       
-      let dynamicBackground = document.getElementById('dynamic-background');
       dynamicBackground.style.backgroundColor = 'rgba(0, 0, 0, 0)';
       dynamicBackground.style.background = 'linear-gradient(to top, #000000c2, #00000026)';
     } else {
@@ -39,20 +38,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
     document.getElementById('play-button').addEventListener('click', function() {
-      let lyricsSection = document.getElementById('lyrics');
       if (isPlaying) {
         pause(); 
       } 
       else {
         play();
-        updateDynamicBackground(); 
-        if (isLyricShowing) { 
-          lyricsSection.style.display = 'none';  //TO DO dont need this if came up with a fix to apply bg changes based on the play state (challenge factor: constant calls to fetch trackinfo)
-          isLyricShowing = false;
-        } else { 
-          lyricsSection.style.display = 'flex';
-          isLyricShowing = true;
-        }
       }
     });
     
@@ -70,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const clickPositionX = event.offsetX;
       const percentageClicked = (clickPositionX / progressBarWidth) * 100;
     
-        // Calculate seek position in milliseconds     //TO BE FIXED: console log shows wrong time 
+        // Calculate seek position in milliseconds     //TO BE FIXED: console log shows wrong time -- also cant test without spotify premium
       const seekPositionMs = (percentageClicked / 100) * duration;
       seek(seekPositionMs);
       console.log(seekPositionMs)
@@ -78,17 +68,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     document.getElementById('lyrics-button').addEventListener('click', function() {
-      let lyricsSection = document.getElementById('lyrics');  
-      if (isPlaying) {
+       
+      if (isPlaying) { //if pause lyrics cant be shown
         updateLyricsButton();
-        updateDynamicBackground();
 
-        if (isLyricShowing) { // if lyrics are shown, hides it
-          lyricsSection.style.display = 'none';
-          isLyricShowing = false; 
+        if (areLyricsShowing) { // if lyrics are shown, hides it
+          lyrics.style.display = 'none';
+          removeDynamicBackground();
+          areLyricsShowing = false; //turns off the lyrics
         } else { 
-          lyricsSection.style.display = 'flex';
-          isLyricShowing = true;
+          lyrics.style.display = 'flex';
+          applyDynamicBackground();
+          areLyricsShowing = true;
         }
       }
     });
@@ -141,11 +132,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-let isLyricShowing = false;
+let areLyricsShowing = false;
+let artist;
+let title;
+let album_cover;
 let progress;
 let isPlaying;
 let dominantColor;
 let duration;
+
+const lyricsButton = document.getElementById('lyrics-button');
+const dynamicBackground = document.getElementById('dynamic-background'); 
+const lyrics = document.getElementById('lyrics');       
+const titleText = document.getElementById('title');
+const artistText = document.getElementById('artist');
+const playButtonBackground = document.getElementById('play-button-bg');
+const playIcon = document.getElementById('play-icon');
+
+
+
 
 
 //*-----API SECTION-----**
@@ -156,7 +161,6 @@ async function fetchLyrics() {
         const response = await fetch('http://localhost:3001/current-lyrics');
         const data = await response.json();
         const currentSecond = progress / 1000; //converts ms to seconds
-        let lyrics = document.getElementById('lyrics')
 
         if (progress == duration) { //when the song ends
           lyrics.innerText = ''
@@ -191,54 +195,13 @@ async function fetchTrackInfo() {
   try {
     const response = await fetch('http://localhost:3001/current-track');
     const data = await response.json();
-    let title = data.title;
-    let artist = data.artist;
-    let album_cover = data.album_cover;
-
+    title = data.title;
+    artist = data.artist;
+    album_cover = data.album_cover;
     progress = data.progress;
     duration = data.duration;
     isPlaying = data.isPlaying;
     dominantColor = data.dominantColor;
-    
-    
-    const dynamicBackground = document.getElementById('dynamic-background');  
-    const titleText = document.getElementById('title');
-    const artistText = document.getElementById('artist');
-    const playButtonBackground = document.getElementById('play-button-bg');
-    const lyricsButton = document.getElementById('lyrics-button');
-
-        
-    updatePlayButton();
-
-    if (artist && title) { 
-      titleText.innerText = title
-      artistText.innerText = artist
-    } else {
-      titleText.innerText = 'Untitled'
-      artistText.innerText = 'Unknown Artist'
-    }
-
-    if (album_cover) {getBackground(album_cover)}
-
-    if ( 5 >= progress / 1000 || progress == duration) { //TO DO: find a permanent fix that updates the dynamicbackground when song changes
-      if (isLyricShowing) {
-        dynamicBackground.style.backgroundColor = `rgba(${hexToRgb(dominantColor, 0.7)}, 0.5`; //TODO put this in a function
-        lyricsButton.style.stroke = dominantColor
-        lyricsButton.style.fill = dominantColor
-      }
-    }
-    if (progress) {
-      updateProgressBar(progress, duration);
-    } 
-    
-    if (isPlaying) {
-      playButtonBackground.style.backgroundColor = `rgba(${hexToRgb(dominantColor, 0.9)})`;
-    } 
-    else {
-      if (album_cover) {
-        dynamicBackground.style.backgroundColor = `rgba(${hexToRgb(dominantColor, 0.7)}, 0.80)`; //0.8 sets transparency lower value == more transparent
-      } 
-    }
   } 
   catch (error) { 
     console.log(error) //no console.error -- it's annoying
@@ -355,15 +318,20 @@ async function getAccessToken() {
 
 //*-----UPDATE INTERFACE SECTION-----**
 
-function updateDynamicBackground() {                                           //to be rewritten: separate into two functions (apply and remove bg) so the conditions will be outside when called
-  const dynamicBackground = document.getElementById('dynamic-background');                            
-  if (isLyricShowing) {
-    dynamicBackground.style.backdropFilter = `blur(0.7px)`;   //removes blur
-    dynamicBackground.style.background = 'linear-gradient(to top, #000000c2, #00000026)'
-  } else {
-    dynamicBackground.style.backgroundColor = `rgba(${hexToRgb(dominantColor, 0.7)}, 0.5`;
-    dynamicBackground.style.backdropFilter = `blur(0.8px)`;
-  }
+
+function removeDynamicBackground() {                                           
+  dynamicBackground.style.backdropFilter = `blur(0.7px)`;   //removes blur
+  dynamicBackground.style.background = 'linear-gradient(to top, #000000c2, #00000026)';
+
+}
+
+function applyDynamicBackground() {
+                    
+  dynamicBackground.style.backgroundColor = `rgba(${hexToRgb(dominantColor, 0.7)}, 0.5`; //0.5 = 50% transparency lower value == more transparent
+  dynamicBackground.style.backdropFilter = `blur(0.8px)`;
+  lyricsButton.style.stroke = dominantColor
+  lyricsButton.style.fill = dominantColor
+
 }
 
 function getBackground(imgUrl, retryCount = 3) {   //sets the album art as background
@@ -379,9 +347,8 @@ function getBackground(imgUrl, retryCount = 3) {   //sets the album art as backg
 }
 
 function updateLyricsButton() {
-  const lyricsButton = document.getElementById('lyrics-button');
 
-  if (isLyricShowing) {
+  if (areLyricsShowing) {
     lyricsButton.style.stroke = '#f5f0f0ea'
     lyricsButton.style.fill = '#f5f0f0ea'
   } else {
@@ -390,31 +357,57 @@ function updateLyricsButton() {
   }
 }
 
-function updatePlayButton() {
-  
-  const playIcon = document.getElementById('play-icon');
-  const playState = 'http://localhost:3001/images/pause_icon.png'
-  const pauseState = 'http://localhost:3001/images/play_icon.png'
-  playIcon.src = isPlaying ? playState : pauseState
-}
-
-function updateProgressBar(currentTime, duration) {
+function updateProgressBar() {
   const progressBar = document.getElementById('progress-bar-fill');
   const progressText = document.getElementById('progress');
   const durationText = document.getElementById('duration');
-  const percentage = (currentTime / duration) * 100;
+  if (duration && progress) {
+    const percentage = (progress / duration) * 100;
+    progressBar.style.width = `${percentage}%`;
+    progressBar.style.width = `${percentage}%`;
+    progressBar.style.backgroundColor = `${dominantColor}80`;
+    progressText.textContent = `${formatTime(progress)}`;
+    durationText.textContent = `${formatTime(duration)}`;
+  } else {
+    progressText.textContent = `${formatTime(0)}`;
+    durationText.textContent = `${formatTime(0)}`;
+  }
+}
 
-  progressBar.style.width = `${percentage}%`;
-  progressBar.style.backgroundColor = `${dominantColor}80`;
+function updateUI() {
   
-  if (currentTime <= 0) {
-    progressText.textContent = `0:00`;
+  const playState = 'http://localhost:3001/images/pause_icon.png'
+  const pauseState = 'http://localhost:3001/images/play_icon.png'
+
+  getBackground(album_cover)
+
+  updateProgressBar();
+
+  if (isPlaying) {
+    playIcon.src = playState
+    playButtonBackground.style.backgroundColor = `rgba(${hexToRgb(dominantColor, 0.9)})`;
+    if (areLyricsShowing) {
+      applyDynamicBackground()
+    } else {
+      removeDynamicBackground()
+    }
   } 
   else {
-    progressText.textContent = `${formatTime(currentTime)}`;
+    playIcon.src = pauseState
+    if (album_cover) {
+      dynamicBackground.style.backgroundColor = `rgba(${hexToRgb(dominantColor, 0.7)}, 0.80)`; 
+    } 
   }
-  durationText.textContent = `${formatTime(duration)}`;
+  if (artist && title) { 
+    titleText.innerText = title
+    artistText.innerText = artist
+  } else {
+    titleText.innerText = 'Untitled'
+    artistText.innerText = 'Unknown Artist'
+  }    
+  
 }
+
 
 
 //*-----INIT SECTION----**
@@ -422,6 +415,7 @@ function startDataUpdates() {
   setInterval(() => {
     fetchTrackInfo();
     fetchLyrics();
+    updateUI();
   }, 1000);
 }
 
