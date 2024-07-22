@@ -43,7 +43,7 @@ jobs:
         CODE_SIGN_CERTIFICATE: ${{ secrets.CODE_SIGN_CERTIFICATE }}
         CODE_SIGN_PASSWORD: ${{ secrets.CODE_SIGN_PASSWORD }}
       run: |
-        echo $CODE_SIGN_CERTIFICATE > certificate.p12
+        echo $CODE_SIGN_CERTIFICATE > certificate.pfx
         npm run build -- --${{ matrix.platform }}
 
     - name: Create Nightly Tag
