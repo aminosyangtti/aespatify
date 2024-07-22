@@ -1,6 +1,9 @@
 name: Nightly Build
 
 on:
+  push:
+    branches:
+      - nightly
   schedule:
     - cron: '0 0 * * *' # Runs every day at midnight
 
@@ -35,7 +38,13 @@ jobs:
         sudo apt install -y wine64 wine32
 
     - name: Build Electron app
-      run: npm run build -- --${{ matrix.platform }}
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        CODE_SIGN_CERTIFICATE: ${{ secrets.CODE_SIGN_CERTIFICATE }}
+        CODE_SIGN_PASSWORD: ${{ secrets.CODE_SIGN_PASSWORD }}
+      run: |
+        echo $CODE_SIGN_CERTIFICATE > certificate.p12
+        npm run build -- --${{ matrix.platform }}
 
     - name: Create Nightly Tag
       id: create_tag
