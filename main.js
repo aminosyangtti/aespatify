@@ -65,10 +65,6 @@ const onAppReady = function () {
   if (process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools({mode:'undocked'});
   }
-  // mainWindow.webContents.openDevTools();
-  // mainWindow.webContents.openDevTools({mode:'undocked'})
-
-
 
   autoUpdater.checkForUpdatesAndNotify();
 

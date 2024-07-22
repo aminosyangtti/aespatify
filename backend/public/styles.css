@@ -158,6 +158,7 @@ body {
   
 
   #login-container {
+    display: flex;
     flex-direction: column;
     align-items: center;
     /* margin: 110px 50px 50px 50px; */
@@ -173,7 +174,7 @@ body {
   #content {
     font-family: Arial, sans-serif;
 
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;

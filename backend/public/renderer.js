@@ -1,24 +1,15 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
-
-  let isLoggedIn;
-  let intervalId;
+  
    try {
-    isLoggedIn = await checkLoginStatus();               //TODO: REWRITE AUTH FLOW
-    toggleLoginState(isLoggedIn)
-
-    if (isLoggedIn) {
-      window.electron.setPosition()
-      startDataUpdates()
-      clearInterval(intervalId)
-      
-      dynamicBackground.style.backgroundColor = 'rgba(0, 0, 0, 0)';
-      dynamicBackground.style.background = 'linear-gradient(to top, #000000c2, #00000026)';
-    } else {
-      intervalId = setInterval(() => {
-        location.reload();
-      }, 5000);
-    }
+     const intervalId = setInterval(() => {
+      toggleLoginView()
+        if (isLoggedIn) {
+          window.electron.setPosition()
+          startDataUpdates()
+          clearInterval(intervalId)
+        }
+      }, 500);
     
     document.getElementById('minimize-button').addEventListener('click', () => {
       window.electron.minimizeWindow();
@@ -33,7 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   
     document.getElementById('login-button').addEventListener('click', () => {
-      window.electron.openExternal('http://localhost:3001/login');
+      openLoginWindow()
       document.getElementById('login-button').innerText = "Logging in...";        
       });
 
@@ -128,10 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-
-
-
-
+let isLoggedIn = false;
 let areLyricsShowing = false;
 let artist;
 let title;
@@ -424,14 +412,18 @@ async function checkLoginStatus() {
     const response = await fetch('http://localhost:3001/is-logged-in');
     const data = await response.json();
     console.log('Login status:', data);
+    isLoggedIn = data;
     return data;
   } catch (error) {
     console.error('Error checking login status:', error);
+    isLoggedIn = false;
     return false;
   }
+  
 }
 
-function toggleLoginState(isLoggedIn) {
+async function toggleLoginView() {
+  await checkLoginStatus()
   console.log('Toggling login state. Is logged in:', isLoggedIn);
   const loginContainer = document.getElementById('login-container');
   const content = document.getElementById('content');
@@ -442,6 +434,54 @@ function toggleLoginState(isLoggedIn) {
     loginContainer.style.display = 'flex';
     content.style.display = 'none';
   }
+}
+
+function openLoginWindow() {
+  return new Promise((resolve, reject) => {
+      const loginUrl = 'http://localhost:3001/login'; 
+      const width = 600;
+      const height = 600;
+      const left = (width - 430 );
+      const top = (window.innerHeight / 2);
+      const features = `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes,toolbar=yes,menubar=yes,location=yes,status=yes`;
+
+      const loginWindow = window.open(
+          loginUrl,
+          'Login',
+          features
+      );
+
+      if (!loginWindow) {
+          reject(new Error('Unable to open login window'));
+          document.getElementById('login-button').innerText = "Log in";   
+
+          return;
+      }
+
+      console.log('Login window opened:', loginWindow);
+
+      // Polling for access token in the new window's URL
+      const interval = setInterval(() => {
+          try {
+              const accessToken = isLoggedIn
+
+              if (accessToken) {
+                  clearInterval(interval);
+                  loginWindow.close();
+                  resolve(accessToken);
+              }
+          } catch (error) {
+              // Ignore cross-origin errors until we can access the URL
+              console.error('Error accessing login window URL:', error);
+          }
+
+          if (loginWindow.closed) {
+              clearInterval(interval);
+              reject(new Error('Login window was closed by the user'));
+              document.getElementById('login-button').innerText = "Log in";   
+          }
+      }, 500);
+  });
 }
 
 
