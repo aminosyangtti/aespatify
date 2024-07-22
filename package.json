@@ -1,14 +1,14 @@
 {
   "name": "aespatify",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Electron app with Spotify integration",
   "main": "main.js",
   "scripts": {
     "start": "NODE_ENV=development electron .",
     "changelog": "auto-changelog -p",
     "pack": "electron-builder --dir",
-    "build": "electron-builder --win",
-    "publish": "electron-builder --win --publish always"
+    "build": "electron-builder --win --linux",
+    "publish": "electron-builder --win --linux --publish always"
   },
   "dependencies": {
     "axios": "^0.21.1",
@@ -16,6 +16,7 @@
     "electron-log": "^5.1.6",
     "electron-updater": "^6.2.1",
     "express": "^4.17.1",
+    "express-rate-limit": "^7.3.1",
     "node-fetch": "^2.6.1",
     "node-vibrant": "^3.2.1-alpha.1",
     "opener": "^1.5.2"
@@ -44,7 +45,6 @@
       ],
       "icon": "build/logo_blk.png"
     },
-    
     "publish": [
       {
         "provider": "github",

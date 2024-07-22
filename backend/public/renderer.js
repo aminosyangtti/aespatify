@@ -143,21 +143,28 @@ const playIcon = document.getElementById('play-icon');
 
 //*-----API SECTION-----**
 
-async function fetchLyrics() {
+let cachedLyrics = 'no lyrics'
+let fetchedLyrics = 'no ly'
 
+async function fetchLyrics() {
+  
+  const currentSecond = progress / 1000; //converts ms to seconds
+
+  if (isPlaying) {
       try {
         const response = await fetch('http://localhost:3001/current-lyrics');
-        const data = await response.json();
-        const currentSecond = progress / 1000; //converts ms to seconds
+        fetchedLyrics = await response.json();
+        cachedLyrics = fetchedLyrics
+      } catch (error) { 
+        fetchedLyrics = cachedLyrics
+        }
 
         if (progress == duration) { //when the song ends
           lyrics.innerText = ''
         }
+          if (typeof fetchedLyrics.lyrics === 'object') {
 
-        if (isPlaying) {
-          if (typeof data.lyrics === 'object') {
-
-            const filteredLyrics = data.lyrics.filter(entry => entry.seconds <= currentSecond); 
+            const filteredLyrics = fetchedLyrics.lyrics.filter(entry => entry.seconds <= currentSecond); 
             const timeStamp = filteredLyrics.reduce((max, entry) => entry.seconds > max.seconds ? entry : max, { seconds: -Infinity }); //finds the closest number before the current timestamp of the song
             
             if (timeStamp.seconds !== -Infinity) {
@@ -172,11 +179,8 @@ async function fetchLyrics() {
           } else {
             lyrics.innerText = `No lyrics available. `;
       }
-        } else { 
-          lyrics.innerText = ` `;}
-      } catch (error) { console.log(error) //not console.error cus its annoying 
-
-        }
+      } else { 
+        lyrics.innerText = ` `;}
 }
   
 async function fetchTrackInfo() {

@@ -3,12 +3,14 @@ const express = require('express');
 const dotenv = require('dotenv');
 const path = require('path');
 const Vibrant = require('node-vibrant');
+const RateLimit = require('express-rate-limit');
+
 
 
 
 dotenv.config();
 
-// process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
 const app = express();
 const port = 3001;
@@ -16,6 +18,19 @@ const spotify_client_id = process.env.SPOTIFY_CLIENT_ID;
 const spotify_client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 const redirectUri = `http://localhost:${port}/callback`;
 const scope = 'user-read-private user-read-email user-read-playback-state user-read-currently-playing streaming';
+
+const playRateLimiter = RateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // limit each IP to 60 requests per windowMs
+});
+
+const lyricsRateLimiter = RateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+})
+
+// Apply rate limiter to all endpoints that interact with Spotify API
+// app.use('/api/', rateLimiter);
 
 // Generate a random state for OAuth
 let generateRandomString = function (length) {
@@ -98,7 +113,7 @@ app.get('/callback', async (req, res) => {
   }
 });
 
-app.get('/current-track', async (req, res) => {
+app.get('/current-track', playRateLimiter, async (req, res) => {
   try {
     const trackInfo = await getCurrentlyPlayingTrack(accessToken);
     // console.log(trackInfo)
@@ -221,9 +236,11 @@ app.put('/previous', async (req, res) => {
 });
 
 
-app.get('/current-lyrics', async (req, res) => {
+app.get('/current-lyrics', lyricsRateLimiter, async (req, res) => {
+
   try {
     const trackInfo = await getCurrentlyPlayingTrack(accessToken);
+
     if (trackInfo.title && trackInfo.artist) {
       const lyrics = await fetchSynchronizedLyrics(trackInfo.title, trackInfo.artist);
       res.json({ lyrics });
@@ -231,7 +248,8 @@ app.get('/current-lyrics', async (req, res) => {
       res.json({ lyrics: 'No lyrics available.' });
     }
   } catch (error) {
-    res.json({ lyrics: 'No lyrics available.' });
+    res.json({ lyrics: 'error: no lyrics available' });
+   
   }
 });
 
@@ -307,7 +325,7 @@ async function fetchSynchronizedLyrics(title, artist) {
       }
 
       if (!response.ok) {
-        const data = await response.text();
+        const data = await response.json();
         return data        
       }
       const data = await response.json();
