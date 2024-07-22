@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        platform: [win32, linux, mac]
+        platform: [win32, linux]
 
     steps:
     - name: Checkout code
