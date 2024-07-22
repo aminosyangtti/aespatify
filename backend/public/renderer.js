@@ -214,6 +214,7 @@ async function play() {
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing track:', error);
+    window.electron.premiumRequiredMessage();
   }
 }
 
@@ -232,6 +233,7 @@ async function pause() {
   } catch (error) {
     console.error('Error pausing track:', error);
     console.error('Error pausing track:', error.message);
+    window.electron.premiumRequiredMessage();
   }
 }
 
@@ -249,6 +251,7 @@ async function next() {
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing next track:', error);
+    window.electron.premiumRequiredMessage();
   }
 }
 
@@ -266,6 +269,7 @@ async function previous() {
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing previous track:', error);
+    window.electron.premiumRequiredMessage();
   }
 }
 
@@ -286,6 +290,7 @@ async function seek(position_ms) {
     console.log('seeking...')
   } catch (error) {
     console.error('Error seeking:', error);
+    window.electron.premiumRequiredMessage();
   }
 }
 
