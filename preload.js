@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld('electron', {
     resizeWindow: () => ipcRenderer.send('resize-window'),
     setPosition: () => ipcRenderer.send('set-position'),
     onWindowResize: (callback) => ipcRenderer.on('window-resized', (event, data) => callback(data)),
+    onUpdateAvailable: (callback) => ipcRenderer.on('update-available', callback),
+  onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', callback),
 
     send: (channel, data) => {
       ipcRenderer.send(channel, data);

@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        platform: [win32, linux]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Generate Changelog
+      run: npm run changelog
+
+    - name: Install Wine (required for Windows builds)
+      if: matrix.platform == 'win32'
+      run: |
+        sudo dpkg --add-architecture i386
+        sudo apt update
+        sudo apt install -y wine64 wine32
+
+    - name: Build Electron app
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        CODE_SIGN_CERTIFICATE: ${{ secrets.CODE_SIGN_CERTIFICATE }}
+        CODE_SIGN_PASSWORD: ${{ secrets.CODE_SIGN_PASSWORD }}
+      run: |
+        echo $CODE_SIGN_CERTIFICATE > certificate.pfx
+        npm run build -- --${{ matrix.platform }}
+        
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body_path: ./CHANGELOG.md
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/${{ matrix.platform }}-unpacked/*
+        asset_name: my_app_${{ matrix.platform }}.zip
+        asset_content_type: application/zip

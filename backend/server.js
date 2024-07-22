@@ -8,7 +8,7 @@ const Vibrant = require('node-vibrant');
 
 dotenv.config();
 
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+// process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
 
 const app = express();
 const port = 3001;
@@ -40,11 +40,11 @@ let auth_query_parameters = new URLSearchParams({
 const authorizeUrl = `https://accounts.spotify.com/authorize/?${auth_query_parameters.toString()}`;
 console.log('Authorize URL:', authorizeUrl);
 
-function startServer() {
-  app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-  });
-}
+// function startServer() {
+//   app.listen(port, () => {
+//     console.log(`Server running at http://localhost:${port}`);
+//   });
+// }
 app.use(express.static(path.join(__dirname, 'public')));
 
 // app.listen(port, (err) => {
