@@ -74,6 +74,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
     });
+
+    document.getElementById('playlist-button').addEventListener('click', () => {
+      if (playlist.style.display == 'none') {
+        playlist.style.display = 'flex';
+        console.log('ihh')
+      } else {
+        playlist.style.display = 'none';
+        console.log('ihgvhh')
+
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!playlistButton.contains(event.target) && !popupList.contains(event.target)) {
+          popupList.classList.add('hidden');
+      }
+  });
     
     window.electron.onWindowResize((data) => {
       //resizes text based on window size
@@ -128,7 +145,8 @@ let progress;
 let isPlaying;
 let dominantColor;
 let duration;
-
+const playlistButton = document.getElementById('playlist-button');
+const playlist = document.getElementById('playlist');
 const lyricsButton = document.getElementById('lyrics-button');
 const dynamicBackground = document.getElementById('dynamic-background'); 
 const lyrics = document.getElementById('lyrics');       
