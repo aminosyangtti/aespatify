@@ -87,8 +87,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.addEventListener('click', (event) => {
-      if (!playlistButton.contains(event.target) && !popupList.contains(event.target)) {
-          popupList.classList.add('hidden');
+      if (!playlistButton.contains(event.target) && !playlist.contains(event.target)) {
+          playlist.classList.add('hidden');
       }
   });
     
@@ -318,9 +318,11 @@ async function getAccessToken() {
     const data = await response.text();
     if (data == 'failed to get access token') {
       console.log('failed to get access token');
+      isLoggedIn = false
     } else {
         // console.log('Access Token:', data);
         // console.log(typeof data)
+        isLoggedIn = true
       return data
     }
   } catch (error) {
@@ -434,23 +436,8 @@ function startDataUpdates() {
   }, 1000);
 }
 
-async function checkLoginStatus() {
-  try {
-    const response = await fetch('http://localhost:3001/is-logged-in');
-    const data = await response.json();
-    console.log('Login status:', data);
-    isLoggedIn = data;
-    return data;
-  } catch (error) {
-    console.error('Error checking login status:', error);
-    isLoggedIn = false;
-    return false;
-  }
-  
-}
-
 async function toggleLoginView() {
-  await checkLoginStatus()
+  await getAccessToken()
   console.log('Toggling login state. Is logged in:', isLoggedIn);
   const loginContainer = document.getElementById('login-container');
   const content = document.getElementById('content');

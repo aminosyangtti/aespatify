@@ -18,6 +18,8 @@ const spotify_client_id = process.env.SPOTIFY_CLIENT_ID;
 const spotify_client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 const redirectUri = `http://localhost:${port}/callback`;
 const scope = 'user-read-private user-read-email user-read-playback-state user-read-currently-playing streaming';
+let accessToken; 
+
 
 const playRateLimiter = RateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -72,12 +74,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 //   }
 // });
 
+
+
 app.get('/login', (req, res) => {
   console.log('Redirecting to authorizeUrl...');
   res.redirect(authorizeUrl);
 });
 
-let accessToken; //it's here so it can be accessed by the other endpoints
 
 app.get('/callback', async (req, res) => {
   const authorizationCode = req.query.code;
@@ -92,12 +95,6 @@ app.get('/callback', async (req, res) => {
 
         res.status(500).send('Successfully logged in. You may now close this window.');
 
-      // res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  
-        
-        
-        
-
       } else {
         console.log('Obtaining access token failed. Redirecting to authorizeUrl...');
         res.redirect(authorizeUrl)
@@ -108,7 +105,6 @@ app.get('/callback', async (req, res) => {
     }
   } else {
     console.log('Receiving authentication code failed. Redirecting to authorizeUrl...');
-    // res.sendFile(path.join(__dirname, 'public', 'index.html'));
     res.redirect.authorizeUrl
   }
 });
@@ -120,15 +116,6 @@ app.get('/current-track', playRateLimiter, async (req, res) => {
     res.json(trackInfo);
   } catch (error) {
     res.status(500).send('Error fetching currently playing track');
-  }
-});
-
-app.get('/is-logged-in', (req, res) => {
-  // Check if accessToken is defined and valid
-  if (accessToken) {
-    res.json(true);
-  } else {
-    res.json(false);
   }
 });
 
