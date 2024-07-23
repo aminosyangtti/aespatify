@@ -17,7 +17,7 @@ const port = 3001;
 const spotify_client_id = process.env.SPOTIFY_CLIENT_ID;
 const spotify_client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 const redirectUri = `http://localhost:${port}/callback`;
-const scope = 'user-read-private user-read-email user-read-playback-state user-read-currently-playing streaming';
+const scope = 'user-read-private user-read-email user-read-playback-state user-read-currently-playing streaming playlist-read-private';
 let accessToken; 
 
 
@@ -123,17 +123,14 @@ app.get('/current-track', playRateLimiter, async (req, res) => {
 app.get('/access-token', (req, res) => {
   // Check if accessToken is defined and valid
   if (accessToken) {
-    res.send(accessToken);
+    res.json(accessToken);
   } else {
-    res.send('failed to get access token');
+    res.status(500).send('failed to get access token');
   }
 });
 
 app.put('/pause', async (req, res) => {
   try {
-    
-
-    // Call Spotify API to pause the current track
     const response = await fetch('https://api.spotify.com/v1/me/player/pause', {
       method: 'PUT',
       headers: {
@@ -156,19 +153,16 @@ app.put('/pause', async (req, res) => {
 app.put('/play', async (req, res) => {
   try {
     
-
     const response = await fetch('https://api.spotify.com/v1/me/player/play', {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${accessToken}`
       }
     });
-
     if (!response.ok) {
       const errorData = await response.json(); // Parse error response from Spotify
       throw new Error(`Failed to play track: ${errorData.error.message}`);
     }
-
     res.sendStatus(200); // Send success status code
   } catch (error) {
     console.error('Error playing track:', error.message);
@@ -178,8 +172,6 @@ app.put('/play', async (req, res) => {
 
 app.put('/next', async (req, res) => {
   try {
-    
-
     // Call Spotify API to pause the current track
     const response = await fetch('https://api.spotify.com/v1/me/player/next', {
       method: 'POST',
@@ -293,15 +285,13 @@ async function getCurrentlyPlayingTrack(accessToken, retryCount = 3) {
   }
 }
 
-app.get('/lyrics.json', (req, res) => {
+app.get('/lyrics.json', lyricsRateLimiter, (req, res) => {
   res.sendFile(path.join(__dirname, 'lyrics.json'));
 });
 
 async function fetchSynchronizedLyrics(title, artist) {
   
-
-    try {
-      
+    try {   
       let response;
       if (title === "Lackin'" && artist === "Denise Julia") {
          response = await fetch(`http://localhost:${port}/lyrics.json`);
@@ -310,7 +300,6 @@ async function fetchSynchronizedLyrics(title, artist) {
 
          response = await fetch(`https://api.textyl.co/api/lyrics?q=${encodeURIComponent(`${title} ${artist}`)}`);
       }
-
       if (!response.ok) {
         const data = await response.json();
         return data        
@@ -323,6 +312,55 @@ async function fetchSynchronizedLyrics(title, artist) {
       throw error;
     }
 }
+
+async function fetchPlaylists() {
+  
+  let allPlaylists = [];
+  let next = `https://api.spotify.com/v1/me/playlists`;
+  const seenIds = new Set(); 
+
+
+  while (next) {
+      const response = await fetch(next + '?limit=50', {
+          headers: {
+              'Authorization': `Bearer ${accessToken}`
+          }
+      });
+      console.log('Fetching playlists from:', next);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch playlists');
+      }
+
+      const data = await response.json();
+      console.log(data)
+    for (const item of data.items) {
+      if (!seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        allPlaylists.push(item); // Add only unique items
+      }
+    }
+
+    next = data.next; // Update URL for the next page
+    console.log('Next URL:', next);
+
+  }
+
+  // console.log('All Playlists with IDs:', allPlaylists);
+  return allPlaylists;
+}
+
+app.get('/playlists', async (req, res) => {
+  try {
+    const playlists = await fetchPlaylists();
+    res.json(playlists);
+  } catch (error) {
+    res.status(500).send('Error fetching playlists');
+  }
+});
+
+
+
 
 
 module.exports = app;

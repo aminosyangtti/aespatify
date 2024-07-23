@@ -388,13 +388,14 @@ playlist-button svg {
   -webkit-app-region: no-drag;
   min-height: 57px;
   position: absolute;
+  display: none;
 
 
 }
 
 #playlist ul {
   list-style: none;
-  padding: 0;
+  padding: 0; 
   margin: 0;
   -webkit-app-region: no-drag;
 
@@ -404,12 +405,20 @@ playlist-button svg {
   padding: 10px;
   cursor: pointer;
   -webkit-app-region: no-drag;
-
 }
 
 #playlist ul li:hover {
   color: #d80505;
 }
+
+#item-list-container {
+  overflow-y: scroll;
+}
+
+#item-list-container::-webkit-scrollbar {
+  display: none; /* Hide scrollbar */
+}
+
 #lyrics-button-container {
 
   width:100%;

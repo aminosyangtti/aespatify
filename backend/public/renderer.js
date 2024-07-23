@@ -76,12 +76,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById('playlist-button').addEventListener('click', () => {
-      if (playlist.style.display == 'none') {
-        playlist.style.display = 'flex';
-        console.log('ihh')
-      } else {
+      if (playlist.style.display != 'none') {
         playlist.style.display = 'none';
-        console.log('ihgvhh')
+        console.log('off')
+      } else {
+        playlist.style.display = 'flex';
+        populatePlaylist()
+        
 
       }
     });
@@ -147,6 +148,7 @@ let dominantColor;
 let duration;
 const playlistButton = document.getElementById('playlist-button');
 const playlist = document.getElementById('playlist');
+const itemListContainer = document.getElementById('item-list-container');
 const lyricsButton = document.getElementById('lyrics-button');
 const dynamicBackground = document.getElementById('dynamic-background'); 
 const lyrics = document.getElementById('lyrics');       
@@ -163,6 +165,41 @@ const playIcon = document.getElementById('play-icon');
 
 let cachedLyrics = 'no lyrics'
 let fetchedLyrics = 'no ly'
+
+async function fetchPlaylists() {
+  try {
+    const response = await fetch('http://localhost:3001/playlists');
+    const data = await response.json();
+    return data
+  } catch {
+
+  }
+}
+
+async function populatePlaylist() {
+  itemListContainer.innerHTML = '';
+
+  const items = await fetchPlaylists()
+  console.log(typeof items)
+  console.log(items)
+  items.forEach(item => {
+    const itemList = document.createElement('li');
+    itemList.textContent = item.name;
+    itemList.dataset.id = item.id;
+    itemList.dataset.uri = item.uri
+
+    itemListContainer.appendChild(itemList);
+
+    // Add click event listener to each list item
+    itemList.addEventListener('click', () => {
+        playPlaylist(item);
+    });
+});
+}
+
+function playPlaylist(item) {
+  console.log(item)
+}
 
 async function fetchLyrics() {
   
@@ -315,18 +352,16 @@ async function seek(position_ms) {
 async function getAccessToken() {
   try {
     const response = await fetch('http://localhost:3001/access-token');
-    const data = await response.text();
-    if (data == 'failed to get access token') {
-      console.log('failed to get access token');
-      isLoggedIn = false
-    } else {
-        // console.log('Access Token:', data);
-        // console.log(typeof data)
-        isLoggedIn = true
-      return data
+    const data = await response.json();
+    if (data) {
+      isLoggedIn = true
+      console.log(data)
+    return data
     }
+    
   } catch (error) {
     console.error('Error checking fetching acces token:', error);
+    isLoggedIn = false
   }
 }
 
