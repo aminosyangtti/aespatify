@@ -63,25 +63,34 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (isPlaying) { //if pause lyrics cant be shown
         updateLyricsButton();
 
-        if (areLyricsShowing) { // if lyrics are shown, hides it
+        if (isShowingLyrics) { // if lyrics are shown, hides it
           lyrics.style.display = 'none';
           removeDynamicBackground();
-          areLyricsShowing = false; //turns off the lyrics
+          isShowingLyrics = false; //turns off the lyrics
         } else { 
           lyrics.style.display = 'flex';
           applyDynamicBackground();
-          areLyricsShowing = true;
+          isShowingLyrics = true;
         }
       }
     });
 
     document.getElementById('playlist-button').addEventListener('click', () => {
-      if (playlist.style.display != 'none') {
+      if (isShowingPlaylists) {
         playlist.style.display = 'none';
-        console.log('off')
+        console.log('off');
+        playlistButton.style.stroke = '#f5f0f0ea'
+        playlistButton.style.fill = '#f5f0f0ea'
+        titleBar.style.backgroundColor = '#00000000'
+
+        isShowingPlaylists = false;
       } else {
         playlist.style.display = 'flex';
-        populatePlaylist()
+        populatePlaylist();
+        playlistButton.style.stroke = dominantColor
+        playlistButton.style.fill = dominantColor
+        titleBar.style.backgroundColor = '#141414'
+        isShowingPlaylists = true;
         
 
       }
@@ -136,9 +145,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-
+let isShowingPlaylists = false
 let isLoggedIn = false;
-let areLyricsShowing = false;
+let isShowingLyrics = false;
 let artist;
 let title;
 let album_cover;
@@ -146,6 +155,8 @@ let progress;
 let isPlaying;
 let dominantColor;
 let duration;
+
+const titleBar = document.getElementById('title-bar');
 const playlistButton = document.getElementById('playlist-button');
 const playlist = document.getElementById('playlist');
 const itemListContainer = document.getElementById('item-list-container');
@@ -171,7 +182,7 @@ async function fetchPlaylists() {
     const response = await fetch('http://localhost:3001/playlists');
     const data = await response.json();
     return data
-  } catch {
+  } catch (error) { console.error(error)
 
   }
 }
@@ -184,21 +195,76 @@ async function populatePlaylist() {
   console.log(items)
   items.forEach(item => {
     const itemList = document.createElement('li');
-    itemList.textContent = item.name;
+    const itemImage = document.createElement('img');
     itemList.dataset.id = item.id;
     itemList.dataset.uri = item.uri
+    itemList.dataset.images = item.images
+    
+    itemImage.src = `${item.images[0].url}`
+    itemImage.alt = item.name;
 
+    const itemTextContainer = document.createElement('div');
+
+
+    const itemText = document.createElement('span');
+    const itemType = document.createElement('span');
+    itemType.textContent = item.type
+    itemType.style.fontSize = '10px'
+    itemType.style.color = '#9e9e9e'
+    itemText.textContent = item.name;
+    
+    itemList.appendChild(itemImage);
+    itemTextContainer.appendChild(itemText);
+    itemTextContainer.appendChild(itemType);
+
+    itemList.appendChild(itemTextContainer);
     itemListContainer.appendChild(itemList);
+    
+
+
 
     // Add click event listener to each list item
     itemList.addEventListener('click', () => {
-        playPlaylist(item);
+        playPlaylist(item.id);
     });
 });
 }
 
-function playPlaylist(item) {
-  console.log(item)
+async function playPlaylist(playlistId, deviceId = null) {
+  console.log(playlistId)
+  let requestBody = {
+    context_uri: `spotify:playlist:${playlistId}`
+};
+
+  if (deviceId) {
+      requestBody.device_id = deviceId;
+  }
+
+  try {
+    const response = await fetch('https://api.spotify.com/v1/me/player/play', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (response.ok) {
+      console.log(`Playlist ${playlistId} is now playing.`);
+    } else {
+      const errorData = await response.json();
+      console.error('Error playing playlist:', errorData);
+      window.electron.premiumRequiredMessage();
+
+      console.error('Status Code:', response.status);
+      console.error('Response Headers:', response.headers);
+    }
+  } catch (error) {
+    console.error('Request failed:', error);
+    window.electron.premiumRequiredMessage();
+
+  }
 }
 
 async function fetchLyrics() {
@@ -400,7 +466,7 @@ function getBackground(imgUrl, retryCount = 3) {   //sets the album art as backg
 
 function updateLyricsButton() {
 
-  if (areLyricsShowing) {
+  if (isShowingLyrics) {
     lyricsButton.style.stroke = '#f5f0f0ea'
     lyricsButton.style.fill = '#f5f0f0ea'
   } else {
@@ -438,7 +504,7 @@ function updateUI() {
   if (isPlaying) {
     playIcon.src = playState
     playButtonBackground.style.backgroundColor = `rgba(${hexToRgb(dominantColor, 0.9)})`;
-    if (areLyricsShowing) {
+    if (isShowingLyrics) {
       applyDynamicBackground()
     } else {
       removeDynamicBackground()

@@ -17,7 +17,7 @@ const port = 3001;
 const spotify_client_id = process.env.SPOTIFY_CLIENT_ID;
 const spotify_client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 const redirectUri = `http://localhost:${port}/callback`;
-const scope = 'user-read-private user-read-email user-read-playback-state user-read-currently-playing streaming playlist-read-private';
+const scope = 'user-read-private user-read-email user-read-playback-state user-read-currently-playing streaming playlist-read-private user-modify-playback-state';
 let accessToken; 
 
 
@@ -307,9 +307,8 @@ async function fetchSynchronizedLyrics(title, artist) {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error fetching synchronized lyrics:', error);
-      console.log(`https://api.textyl.co/api/lyrics?q=${encodeURIComponent(`${title} ${artist}`)}`)
-      throw error;
+      console.log(`No lyrics available: https://api.textyl.co/api/lyrics?q=${encodeURIComponent(`${title} ${artist}`)}`)
+
     }
 }
 
