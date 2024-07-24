@@ -77,8 +77,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (isShowingPlaylists) {
         playlist.style.display = 'none';
         console.log('off');
-        playlistButton.style.stroke = '#f5f0f0ea'
-        playlistButton.style.fill = '#f5f0f0ea'
+        playlistButton.style.stroke = defaultColor
+        playlistButton.style.fill = defaultColor
         titleBar.style.backgroundColor = '#00000000'
 
         isShowingPlaylists = false;
@@ -93,6 +93,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       }
     });
+
+    document.getElementById('shuffle-button').addEventListener('click', () => {
+     setShuffle(!shuffle_state)
+    });
+
 
     document.addEventListener('click', (event) => {
       if (!playlistButton.contains(event.target) && !playlist.contains(event.target)) {
@@ -153,7 +158,9 @@ let progress;
 let isPlaying;
 let dominantColor;
 let duration;
+let shuffle_state;
 
+const defaultColor = '#979797ea'
 const titleBar = document.getElementById('title-bar');
 const playlistButton = document.getElementById('playlist-button');
 const playlist = document.getElementById('playlist');
@@ -165,6 +172,7 @@ const titleText = document.getElementById('title');
 const artistText = document.getElementById('artist');
 const playButtonBackground = document.getElementById('play-button-bg');
 const playIcon = document.getElementById('play-icon');
+const shuffleButton = document.getElementById('shuffle-button');
 
 
 
@@ -311,6 +319,7 @@ async function fetchTrackInfo() {
     duration = data.duration;
     isPlaying = data.isPlaying;
     dominantColor = data.dominantColor;
+    shuffle_state = data.shuffle_state
   } 
   catch (error) { 
     console.log(error) //no console.error -- it's annoying
@@ -411,6 +420,31 @@ async function seek(position_ms) {
   }
 }
 
+async function setShuffle(state) {
+
+  try {
+    const response = await fetch('https://api.spotify.com/v1/me/player/shuffle', {
+      method: 'PUT',
+      headers: {
+          'Authorization': `Bearer ${getAccessToken()}`, 
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ state })
+  });
+
+  if (response.ok) {
+      console.log(`Shuffle ${state ? 'enabled' : 'disabled'}.`);
+  } else {
+      const errorData = await response.json();
+      throw new Error(`Failed to change set shuffle: ${errorData.error.message}`);
+  }
+  } catch (error){
+    console.error('Error seeking:', error);
+    window.electron.premiumRequiredMessage();
+  }
+    
+}
+
 async function getAccessToken() {
   try {
     const response = await fetch('http://localhost:3001/access-token');
@@ -463,8 +497,8 @@ function getBackground(imgUrl, retryCount = 3) {   //sets the album art as backg
 function updateLyricsButton() {
 
   if (isShowingLyrics) {
-    lyricsButton.style.stroke = '#f5f0f0ea'
-    lyricsButton.style.fill = '#f5f0f0ea'
+    lyricsButton.style.stroke = defaultColor
+    lyricsButton.style.fill = defaultColor
   } else {
     lyricsButton.style.stroke = dominantColor
     lyricsButton.style.fill = dominantColor
@@ -496,6 +530,9 @@ function updateUI() {
   getBackground(album_cover)
 
   updateProgressBar();
+
+  shuffle_state ? shuffleButton.style.stroke = dominantColor : shuffleButton.style.stroke = defaultColor
+
 
   if (isPlaying) {
     playIcon.src = playState

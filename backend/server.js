@@ -28,7 +28,7 @@ const playRateLimiter = RateLimit({
 
 const lyricsRateLimiter = RateLimit({
   windowMs: 60 * 1000,
-  max: 60,
+  max: 80,
 })
 
 // Apply rate limiter to all endpoints that interact with Spotify API
@@ -273,8 +273,9 @@ async function getCurrentlyPlayingTrack(accessToken, retryCount = 3) {
     const progress = data.progress_ms;
     const palette = await Vibrant.from(album_cover).getPalette(); //gets background palette
     const dominantColor = palette.Vibrant.hex; 
+    let shuffle_state = await getShuffleState()
 
-    return { isPlaying, title, artist, progress, duration, album_cover, dominantColor};
+    return { isPlaying, title, artist, progress, duration, album_cover, dominantColor, shuffle_state};
   } catch (error) {
     if (retryCount > 0) {
       console.warn(`Retrying getCurrentlyPlayingTrack... attempts left: ${retryCount}`);
@@ -357,6 +358,29 @@ app.get('/playlists', async (req, res) => {
     res.status(500).send('Error fetching playlists');
   }
 });
+
+
+async function getShuffleState() {
+
+  const response = await fetch('https://api.spotify.com/v1/me/player', {
+      headers: {
+          'Authorization': `Bearer ${accessToken}`
+      }
+  });
+
+  if (response.ok) {
+      const data = await response.json();
+      return data.shuffle_state; // Returns true or false
+  } else {
+      const errorData = await response.json();
+      console.error('Error fetching playback state:', errorData);
+      return false; 
+  }
+}
+
+
+
+
 
 
 

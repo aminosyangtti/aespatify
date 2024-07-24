@@ -1,6 +1,6 @@
 {
   "name": "aespatify",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Electron app with Spotify integration",
   "main": "main.js",
   "scripts": {
@@ -36,7 +36,8 @@
       "target": "nsis",
       "icon": "build/logo_blk.png",
       "certificateFile": "{$CODE_SIGN_CERTIFICATE}",
-      "certificatePassword": "${CODE_SIGN_PASSWORD}"
+      "certificatePassword": "${CODE_SIGN_PASSWORD}",
+      "publisherName": "aminosyangtti"
     },
     "linux": {
       "target": [
