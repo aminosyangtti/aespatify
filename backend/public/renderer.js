@@ -47,15 +47,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById('progress-bar').addEventListener('click', (event) => {
-      const progressBarWidth = document.getElementById('progress').clientWidth;
+      const progressBarWidth = document.getElementById('progress-bar').clientWidth;
       const clickPositionX = event.offsetX;
       const percentageClicked = (clickPositionX / progressBarWidth) * 100;
     
         // Calculate seek position in milliseconds     //TO BE FIXED: console log shows wrong time -- also cant test without spotify premium
       const seekPositionMs = (percentageClicked / 100) * duration;
       seek(seekPositionMs);
-      console.log(seekPositionMs)
-      console.log(formatTime(seekPositionMs))
     });
     
     document.getElementById('lyrics-button').addEventListener('click', function() {
@@ -182,8 +180,8 @@ async function fetchPlaylists() {
     const response = await fetch('http://localhost:3001/playlists');
     const data = await response.json();
     return data
-  } catch (error) { console.error(error)
-
+  } catch (error) { 
+    console.error(error)
   }
 }
 
@@ -219,8 +217,6 @@ async function populatePlaylist() {
 
     itemList.appendChild(itemTextContainer);
     itemListContainer.appendChild(itemList);
-    
-
 
 
     // Add click event listener to each list item
