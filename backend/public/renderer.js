@@ -1,6 +1,6 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
-  
+
    try {
      const intervalId = setInterval(() => {
       toggleLoginView()
@@ -245,7 +245,7 @@ async function playPlaylist(playlistId, deviceId = null) {
   }
 
   try {
-    const response = await fetch('https://api.spotify.com/v1/me/player/play', {
+    const response = await fetch('http://localhost:3001/playPlaylist', {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${getAccessToken()}`,
@@ -401,20 +401,23 @@ async function previous() {
 
 async function seek(position_ms) {
   try {
-    const response = await fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${position_ms}`, {
+    const response = await fetch(`http://localhost:3001/seek`, {
       method: 'PUT',
       headers: {
         'Authorization':`'Bearer ${getAccessToken()}`,
         'Content-Type': 'application/json'
-      }
+      }, 
+      body: JSON.stringify({ position_ms })
+
     });
     
-    if (!response.ok) {
-      const errorData = await response.json(); // Parse error response from Spotify
-      throw new Error(`Failed to change track progress: ${errorData.error.message}`);
-    }
-    console.log('seeking...')
-  } catch (error) {
+    if (response.ok) {
+  } else {
+    const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to change set shuffle: ${errorData}`);
+  }
+  } catch (error){
     console.error('Error seeking:', error);
     window.electron.premiumRequiredMessage();
   }
@@ -423,7 +426,7 @@ async function seek(position_ms) {
 async function setShuffle(state) {
 
   try {
-    const response = await fetch('https://api.spotify.com/v1/me/player/shuffle', {
+    const response = await fetch('http://localhost:3001/shuffle', {
       method: 'PUT',
       headers: {
           'Authorization': `Bearer ${getAccessToken()}`, 
@@ -435,8 +438,9 @@ async function setShuffle(state) {
   if (response.ok) {
       console.log(`Shuffle ${state ? 'enabled' : 'disabled'}.`);
   } else {
-      const errorData = await response.json();
-      throw new Error(`Failed to change set shuffle: ${errorData.error.message}`);
+    const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to change set shuffle: ${errorData}`);
   }
   } catch (error){
     console.error('Error seeking:', error);
