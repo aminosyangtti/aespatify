@@ -509,6 +509,12 @@ function updateUI() {
     } else {
       removeDynamicBackground()
     }
+
+    if(isShowingPlaylists) {
+      playlistButton.style.fill = dominantColor
+      playlistButton.style.stroke = dominantColor
+
+    }
   } 
   else {
     playIcon.src = pauseState
