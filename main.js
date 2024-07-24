@@ -106,6 +106,14 @@ const onAppReady = function () {
     mainWindow.webContents.send('window-resized', { width, height });
   });
 
+  ipcMain.on('premium-required-message', (info) => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Spotify Premium Required',
+      message: 'This action needs a premium account. (Greedy motherfucking Spotify) ',
+    });
+  });
+
   
   ipcMain.on('resize-window', (event) => {
     const { width, height } = mainWindow.getBounds();

@@ -63,17 +63,44 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (isPlaying) { //if pause lyrics cant be shown
         updateLyricsButton();
 
-        if (areLyricsShowing) { // if lyrics are shown, hides it
+        if (isShowingLyrics) { // if lyrics are shown, hides it
           lyrics.style.display = 'none';
           removeDynamicBackground();
-          areLyricsShowing = false; //turns off the lyrics
+          isShowingLyrics = false; //turns off the lyrics
         } else { 
           lyrics.style.display = 'flex';
           applyDynamicBackground();
-          areLyricsShowing = true;
+          isShowingLyrics = true;
         }
       }
     });
+
+    document.getElementById('playlist-button').addEventListener('click', () => {
+      if (isShowingPlaylists) {
+        playlist.style.display = 'none';
+        console.log('off');
+        playlistButton.style.stroke = '#f5f0f0ea'
+        playlistButton.style.fill = '#f5f0f0ea'
+        titleBar.style.backgroundColor = '#00000000'
+
+        isShowingPlaylists = false;
+      } else {
+        playlist.style.display = 'flex';
+        populatePlaylist();
+        playlistButton.style.stroke = dominantColor
+        playlistButton.style.fill = dominantColor
+        titleBar.style.backgroundColor = '#141414'
+        isShowingPlaylists = true;
+        
+
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!playlistButton.contains(event.target) && !playlist.contains(event.target)) {
+          playlist.classList.add('hidden');
+      }
+  });
     
     window.electron.onWindowResize((data) => {
       //resizes text based on window size
@@ -118,9 +145,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-
+let isShowingPlaylists = false
 let isLoggedIn = false;
-let areLyricsShowing = false;
+let isShowingLyrics = false;
 let artist;
 let title;
 let album_cover;
@@ -129,6 +156,10 @@ let isPlaying;
 let dominantColor;
 let duration;
 
+const titleBar = document.getElementById('title-bar');
+const playlistButton = document.getElementById('playlist-button');
+const playlist = document.getElementById('playlist');
+const itemListContainer = document.getElementById('item-list-container');
 const lyricsButton = document.getElementById('lyrics-button');
 const dynamicBackground = document.getElementById('dynamic-background'); 
 const lyrics = document.getElementById('lyrics');       
@@ -143,21 +174,118 @@ const playIcon = document.getElementById('play-icon');
 
 //*-----API SECTION-----**
 
-async function fetchLyrics() {
+let cachedLyrics = 'no lyrics'
+let fetchedLyrics = 'no ly'
 
+async function fetchPlaylists() {
+  try {
+    const response = await fetch('http://localhost:3001/playlists');
+    const data = await response.json();
+    return data
+  } catch (error) { console.error(error)
+
+  }
+}
+
+async function populatePlaylist() {
+  itemListContainer.innerHTML = '';
+
+  const items = await fetchPlaylists()
+  console.log(typeof items)
+  console.log(items)
+  items.forEach(item => {
+    const itemList = document.createElement('li');
+    const itemImage = document.createElement('img');
+    itemList.dataset.id = item.id;
+    itemList.dataset.uri = item.uri
+    itemList.dataset.images = item.images
+    
+    itemImage.src = `${item.images[0].url}`
+    itemImage.alt = item.name;
+
+    const itemTextContainer = document.createElement('div');
+
+
+    const itemText = document.createElement('span');
+    const itemType = document.createElement('span');
+    itemType.textContent = item.type
+    itemType.style.fontSize = '10px'
+    itemType.style.color = '#9e9e9e'
+    itemText.textContent = item.name;
+    
+    itemList.appendChild(itemImage);
+    itemTextContainer.appendChild(itemText);
+    itemTextContainer.appendChild(itemType);
+
+    itemList.appendChild(itemTextContainer);
+    itemListContainer.appendChild(itemList);
+    
+
+
+
+    // Add click event listener to each list item
+    itemList.addEventListener('click', () => {
+        playPlaylist(item.id);
+    });
+});
+}
+
+async function playPlaylist(playlistId, deviceId = null) {
+  console.log(playlistId)
+  let requestBody = {
+    context_uri: `spotify:playlist:${playlistId}`
+};
+
+  if (deviceId) {
+      requestBody.device_id = deviceId;
+  }
+
+  try {
+    const response = await fetch('https://api.spotify.com/v1/me/player/play', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (response.ok) {
+      console.log(`Playlist ${playlistId} is now playing.`);
+    } else {
+      const errorData = await response.json();
+      console.error('Error playing playlist:', errorData);
+      window.electron.premiumRequiredMessage();
+
+      console.error('Status Code:', response.status);
+      console.error('Response Headers:', response.headers);
+    }
+  } catch (error) {
+    console.error('Request failed:', error);
+    window.electron.premiumRequiredMessage();
+
+  }
+}
+
+async function fetchLyrics() {
+  
+  const currentSecond = progress / 1000; //converts ms to seconds
+
+  if (isPlaying) {
       try {
         const response = await fetch('http://localhost:3001/current-lyrics');
-        const data = await response.json();
-        const currentSecond = progress / 1000; //converts ms to seconds
+        fetchedLyrics = await response.json();
+        cachedLyrics = fetchedLyrics
+      } catch (error) { 
+        fetchedLyrics = cachedLyrics
+        }
 
         if (progress == duration) { //when the song ends
           lyrics.innerText = ''
         }
+          if (typeof fetchedLyrics.lyrics === 'object') {
 
-        if (isPlaying) {
-          if (typeof data.lyrics === 'object') {
-
-            const filteredLyrics = data.lyrics.filter(entry => entry.seconds <= currentSecond); 
+            const filteredLyrics = fetchedLyrics.lyrics.filter(entry => entry.seconds <= currentSecond); 
             const timeStamp = filteredLyrics.reduce((max, entry) => entry.seconds > max.seconds ? entry : max, { seconds: -Infinity }); //finds the closest number before the current timestamp of the song
             
             if (timeStamp.seconds !== -Infinity) {
@@ -172,11 +300,8 @@ async function fetchLyrics() {
           } else {
             lyrics.innerText = `No lyrics available. `;
       }
-        } else { 
-          lyrics.innerText = ` `;}
-      } catch (error) { console.log(error) //not console.error cus its annoying 
-
-        }
+      } else { 
+        lyrics.innerText = ` `;}
 }
   
 async function fetchTrackInfo() {
@@ -210,6 +335,7 @@ async function play() {
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing track:', error);
+    window.electron.premiumRequiredMessage();
   }
 }
 
@@ -228,6 +354,7 @@ async function pause() {
   } catch (error) {
     console.error('Error pausing track:', error);
     console.error('Error pausing track:', error.message);
+    window.electron.premiumRequiredMessage();
   }
 }
 
@@ -245,6 +372,7 @@ async function next() {
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing next track:', error);
+    window.electron.premiumRequiredMessage();
   }
 }
 
@@ -262,6 +390,7 @@ async function previous() {
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing previous track:', error);
+    window.electron.premiumRequiredMessage();
   }
 }
 
@@ -282,22 +411,23 @@ async function seek(position_ms) {
     console.log('seeking...')
   } catch (error) {
     console.error('Error seeking:', error);
+    window.electron.premiumRequiredMessage();
   }
 }
 
 async function getAccessToken() {
   try {
     const response = await fetch('http://localhost:3001/access-token');
-    const data = await response.text();
-    if (data == 'failed to get access token') {
-      console.log('failed to get access token');
-    } else {
-        // console.log('Access Token:', data);
-        // console.log(typeof data)
-      return data
+    const data = await response.json();
+    if (data) {
+      isLoggedIn = true
+      console.log(data)
+    return data
     }
+    
   } catch (error) {
     console.error('Error checking fetching acces token:', error);
+    isLoggedIn = false
   }
 }
 
@@ -336,7 +466,7 @@ function getBackground(imgUrl, retryCount = 3) {   //sets the album art as backg
 
 function updateLyricsButton() {
 
-  if (areLyricsShowing) {
+  if (isShowingLyrics) {
     lyricsButton.style.stroke = '#f5f0f0ea'
     lyricsButton.style.fill = '#f5f0f0ea'
   } else {
@@ -374,10 +504,16 @@ function updateUI() {
   if (isPlaying) {
     playIcon.src = playState
     playButtonBackground.style.backgroundColor = `rgba(${hexToRgb(dominantColor, 0.9)})`;
-    if (areLyricsShowing) {
+    if (isShowingLyrics) {
       applyDynamicBackground()
     } else {
       removeDynamicBackground()
+    }
+
+    if(isShowingPlaylists) {
+      playlistButton.style.fill = dominantColor
+      playlistButton.style.stroke = dominantColor
+
     }
   } 
   else {
@@ -407,23 +543,8 @@ function startDataUpdates() {
   }, 1000);
 }
 
-async function checkLoginStatus() {
-  try {
-    const response = await fetch('http://localhost:3001/is-logged-in');
-    const data = await response.json();
-    console.log('Login status:', data);
-    isLoggedIn = data;
-    return data;
-  } catch (error) {
-    console.error('Error checking login status:', error);
-    isLoggedIn = false;
-    return false;
-  }
-  
-}
-
 async function toggleLoginView() {
-  await checkLoginStatus()
+  await getAccessToken()
   console.log('Toggling login state. Is logged in:', isLoggedIn);
   const loginContainer = document.getElementById('login-container');
   const content = document.getElementById('content');

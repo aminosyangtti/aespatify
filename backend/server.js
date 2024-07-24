@@ -3,6 +3,8 @@ const express = require('express');
 const dotenv = require('dotenv');
 const path = require('path');
 const Vibrant = require('node-vibrant');
+const RateLimit = require('express-rate-limit');
+
 
 
 
@@ -15,7 +17,22 @@ const port = 3001;
 const spotify_client_id = process.env.SPOTIFY_CLIENT_ID;
 const spotify_client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 const redirectUri = `http://localhost:${port}/callback`;
-const scope = 'user-read-private user-read-email user-read-playback-state user-read-currently-playing streaming';
+const scope = 'user-read-private user-read-email user-read-playback-state user-read-currently-playing streaming playlist-read-private user-modify-playback-state';
+let accessToken; 
+
+
+const playRateLimiter = RateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // limit each IP to 60 requests per windowMs
+});
+
+const lyricsRateLimiter = RateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+})
+
+// Apply rate limiter to all endpoints that interact with Spotify API
+// app.use('/api/', rateLimiter);
 
 // Generate a random state for OAuth
 let generateRandomString = function (length) {
@@ -57,12 +74,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 //   }
 // });
 
+
+
 app.get('/login', (req, res) => {
   console.log('Redirecting to authorizeUrl...');
   res.redirect(authorizeUrl);
 });
 
-let accessToken; //it's here so it can be accessed by the other endpoints
 
 app.get('/callback', async (req, res) => {
   const authorizationCode = req.query.code;
@@ -77,12 +95,6 @@ app.get('/callback', async (req, res) => {
 
         res.status(500).send('Successfully logged in. You may now close this window.');
 
-      // res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  
-        
-        
-        
-
       } else {
         console.log('Obtaining access token failed. Redirecting to authorizeUrl...');
         res.redirect(authorizeUrl)
@@ -93,12 +105,11 @@ app.get('/callback', async (req, res) => {
     }
   } else {
     console.log('Receiving authentication code failed. Redirecting to authorizeUrl...');
-    // res.sendFile(path.join(__dirname, 'public', 'index.html'));
     res.redirect.authorizeUrl
   }
 });
 
-app.get('/current-track', async (req, res) => {
+app.get('/current-track', playRateLimiter, async (req, res) => {
   try {
     const trackInfo = await getCurrentlyPlayingTrack(accessToken);
     // console.log(trackInfo)
@@ -108,30 +119,18 @@ app.get('/current-track', async (req, res) => {
   }
 });
 
-app.get('/is-logged-in', (req, res) => {
-  // Check if accessToken is defined and valid
-  if (accessToken) {
-    res.json(true);
-  } else {
-    res.json(false);
-  }
-});
-
 
 app.get('/access-token', (req, res) => {
   // Check if accessToken is defined and valid
   if (accessToken) {
-    res.send(accessToken);
+    res.json(accessToken);
   } else {
-    res.send('failed to get access token');
+    res.status(500).send('failed to get access token');
   }
 });
 
 app.put('/pause', async (req, res) => {
   try {
-    
-
-    // Call Spotify API to pause the current track
     const response = await fetch('https://api.spotify.com/v1/me/player/pause', {
       method: 'PUT',
       headers: {
@@ -154,19 +153,16 @@ app.put('/pause', async (req, res) => {
 app.put('/play', async (req, res) => {
   try {
     
-
     const response = await fetch('https://api.spotify.com/v1/me/player/play', {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${accessToken}`
       }
     });
-
     if (!response.ok) {
       const errorData = await response.json(); // Parse error response from Spotify
       throw new Error(`Failed to play track: ${errorData.error.message}`);
     }
-
     res.sendStatus(200); // Send success status code
   } catch (error) {
     console.error('Error playing track:', error.message);
@@ -176,8 +172,6 @@ app.put('/play', async (req, res) => {
 
 app.put('/next', async (req, res) => {
   try {
-    
-
     // Call Spotify API to pause the current track
     const response = await fetch('https://api.spotify.com/v1/me/player/next', {
       method: 'POST',
@@ -221,9 +215,11 @@ app.put('/previous', async (req, res) => {
 });
 
 
-app.get('/current-lyrics', async (req, res) => {
+app.get('/current-lyrics', lyricsRateLimiter, async (req, res) => {
+
   try {
     const trackInfo = await getCurrentlyPlayingTrack(accessToken);
+
     if (trackInfo.title && trackInfo.artist) {
       const lyrics = await fetchSynchronizedLyrics(trackInfo.title, trackInfo.artist);
       res.json({ lyrics });
@@ -231,7 +227,8 @@ app.get('/current-lyrics', async (req, res) => {
       res.json({ lyrics: 'No lyrics available.' });
     }
   } catch (error) {
-    res.json({ lyrics: 'No lyrics available.' });
+    res.json({ lyrics: 'error: no lyrics available' });
+   
   }
 });
 
@@ -288,15 +285,13 @@ async function getCurrentlyPlayingTrack(accessToken, retryCount = 3) {
   }
 }
 
-app.get('/lyrics.json', (req, res) => {
+app.get('/lyrics.json', lyricsRateLimiter, (req, res) => {
   res.sendFile(path.join(__dirname, 'lyrics.json'));
 });
 
 async function fetchSynchronizedLyrics(title, artist) {
   
-
-    try {
-      
+    try {   
       let response;
       if (title === "Lackin'" && artist === "Denise Julia") {
          response = await fetch(`http://localhost:${port}/lyrics.json`);
@@ -305,19 +300,66 @@ async function fetchSynchronizedLyrics(title, artist) {
 
          response = await fetch(`https://api.textyl.co/api/lyrics?q=${encodeURIComponent(`${title} ${artist}`)}`);
       }
-
       if (!response.ok) {
-        const data = await response.text();
+        const data = await response.json();
         return data        
       }
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error fetching synchronized lyrics:', error);
-      console.log(`https://api.textyl.co/api/lyrics?q=${encodeURIComponent(`${title} ${artist}`)}`)
-      throw error;
+      console.log(`No lyrics available: https://api.textyl.co/api/lyrics?q=${encodeURIComponent(`${title} ${artist}`)}`)
+
     }
 }
+
+async function fetchPlaylists() {
+  
+  let allPlaylists = [];
+  let next = `https://api.spotify.com/v1/me/playlists`;
+  const seenIds = new Set(); 
+
+
+  while (next) {
+      const response = await fetch(next + '?limit=50', {
+          headers: {
+              'Authorization': `Bearer ${accessToken}`
+          }
+      });
+      console.log('Fetching playlists from:', next);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch playlists');
+      }
+
+      const data = await response.json();
+      console.log(data)
+    for (const item of data.items) {
+      if (!seenIds.has(item.id)) {
+        seenIds.add(item.id);
+        allPlaylists.push(item); // Add only unique items
+      }
+    }
+
+    next = data.next; // Update URL for the next page
+    console.log('Next URL:', next);
+
+  }
+
+  // console.log('All Playlists with IDs:', allPlaylists);
+  return allPlaylists;
+}
+
+app.get('/playlists', async (req, res) => {
+  try {
+    const playlists = await fetchPlaylists();
+    res.json(playlists);
+  } catch (error) {
+    res.status(500).send('Error fetching playlists');
+  }
+});
+
+
+
 
 
 module.exports = app;
