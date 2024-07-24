@@ -28,7 +28,7 @@ const playRateLimiter = RateLimit({
 
 const lyricsRateLimiter = RateLimit({
   windowMs: 60 * 1000,
-  max: 60,
+  max: 80,
 })
 
 // Apply rate limiter to all endpoints that interact with Spotify API
@@ -377,6 +377,10 @@ async function getShuffleState() {
       return false; 
   }
 }
+
+
+
+
 
 
 

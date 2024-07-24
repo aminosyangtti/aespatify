@@ -94,6 +94,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
 
+    document.getElementById('shuffle-button').addEventListener('click', () => {
+     setShuffle(!shuffle_state)
+    });
+
+
     document.addEventListener('click', (event) => {
       if (!playlistButton.contains(event.target) && !playlist.contains(event.target)) {
           playlist.classList.add('hidden');
@@ -413,6 +418,31 @@ async function seek(position_ms) {
     console.error('Error seeking:', error);
     window.electron.premiumRequiredMessage();
   }
+}
+
+async function setShuffle(state) {
+
+  try {
+    const response = await fetch('https://api.spotify.com/v1/me/player/shuffle', {
+      method: 'PUT',
+      headers: {
+          'Authorization': `Bearer ${getAccessToken()}`, 
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ state })
+  });
+
+  if (response.ok) {
+      console.log(`Shuffle ${state ? 'enabled' : 'disabled'}.`);
+  } else {
+      const errorData = await response.json();
+      throw new Error(`Failed to change set shuffle: ${errorData.error.message}`);
+  }
+  } catch (error){
+    console.error('Error seeking:', error);
+    window.electron.premiumRequiredMessage();
+  }
+    
 }
 
 async function getAccessToken() {
