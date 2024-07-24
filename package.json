@@ -1,6 +1,6 @@
 {
   "name": "aespatify",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Electron app with Spotify integration",
   "main": "main.js",
   "scripts": {
