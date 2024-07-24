@@ -77,8 +77,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (isShowingPlaylists) {
         playlist.style.display = 'none';
         console.log('off');
-        playlistButton.style.stroke = '#f5f0f0ea'
-        playlistButton.style.fill = '#f5f0f0ea'
+        playlistButton.style.stroke = defaultColor
+        playlistButton.style.fill = defaultColor
         titleBar.style.backgroundColor = '#00000000'
 
         isShowingPlaylists = false;
@@ -153,7 +153,9 @@ let progress;
 let isPlaying;
 let dominantColor;
 let duration;
+let shuffle_state;
 
+const defaultColor = '#979797ea'
 const titleBar = document.getElementById('title-bar');
 const playlistButton = document.getElementById('playlist-button');
 const playlist = document.getElementById('playlist');
@@ -165,6 +167,7 @@ const titleText = document.getElementById('title');
 const artistText = document.getElementById('artist');
 const playButtonBackground = document.getElementById('play-button-bg');
 const playIcon = document.getElementById('play-icon');
+const shuffleButton = document.getElementById('shuffle-button');
 
 
 
@@ -311,6 +314,7 @@ async function fetchTrackInfo() {
     duration = data.duration;
     isPlaying = data.isPlaying;
     dominantColor = data.dominantColor;
+    shuffle_state = data.shuffle_state
   } 
   catch (error) { 
     console.log(error) //no console.error -- it's annoying
@@ -463,8 +467,8 @@ function getBackground(imgUrl, retryCount = 3) {   //sets the album art as backg
 function updateLyricsButton() {
 
   if (isShowingLyrics) {
-    lyricsButton.style.stroke = '#f5f0f0ea'
-    lyricsButton.style.fill = '#f5f0f0ea'
+    lyricsButton.style.stroke = defaultColor
+    lyricsButton.style.fill = defaultColor
   } else {
     lyricsButton.style.stroke = dominantColor
     lyricsButton.style.fill = dominantColor
@@ -496,6 +500,9 @@ function updateUI() {
   getBackground(album_cover)
 
   updateProgressBar();
+
+  shuffle_state ? shuffleButton.style.stroke = dominantColor : shuffleButton.style.stroke = defaultColor
+
 
   if (isPlaying) {
     playIcon.src = playState

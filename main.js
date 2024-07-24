@@ -52,7 +52,7 @@ const onAppReady = function () {
       contextIsolation: true,
       enableRemoteModule: false,
       nodeIntegration: false,
-      webSecurity: false
+      webSecurity: true
     }
   });
 

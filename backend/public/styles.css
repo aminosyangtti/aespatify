@@ -342,8 +342,8 @@ align-items: center;
   background-color: transparent; /* Transparent background */
   border: none; /* Remove border */
   padding: 0;
-  stroke: #f5f0f0ea; 
-  fill: #f5f0f0ea;
+  stroke: #979797ea; 
+  fill: #979797ea;
   /* filter: invert(15%) sepia(100%) saturate(1000%) hue-rotate(77deg) brightness(95%) contrast(80%); */
   cursor: pointer;
   -webkit-app-region: no-drag;
@@ -360,17 +360,36 @@ align-items: center;
   /* stroke-width: 1px; */
 }
 
+#shuffle-button {
+  background-color: transparent; 
+  border: none;
+  stroke: #979797ea; 
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  padding: 0;
+  fill: none;
+  stroke-width: 1px;
+
+}
+
+#shuffle-button svg {
+
+  width: 25px; 
+  height: 25px;   
+  filter: opacity(90%);
+}
+
 #playlist-button {
-  background-color: transparent; /* Transparent background */
-  border: none; /* Remove border */
-  stroke: #f5f0f0ea; 
-  fill: #f5f0f0ea;
+  background-color: transparent; 
+  border: none; 
+  stroke: #979797ea; 
+  fill: #979797ea;
   /* filter: invert(15%) sepia(100%) saturate(1000%) hue-rotate(77deg) brightness(95%) contrast(80%); */
   cursor: pointer;
   -webkit-app-region: no-drag;
   padding-right: 10px;
 }
-playlist-button svg {
+#playlist-button svg {
 
   filter: opacity(90%);
 }
