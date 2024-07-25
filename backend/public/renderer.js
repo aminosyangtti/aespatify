@@ -1,6 +1,6 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
-  
+
    try {
      const intervalId = setInterval(() => {
       toggleLoginView()
@@ -50,6 +50,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const progressBarWidth = document.getElementById('progress-bar').clientWidth;
       const clickPositionX = event.offsetX;
       const percentageClicked = (clickPositionX / progressBarWidth) * 100;
+      progressBar.style.width = `${percentageClicked}%`;
+
     
         // Calculate seek position in milliseconds     //TO BE FIXED: console log shows wrong time -- also cant test without spotify premium
       const seekPositionMs = (percentageClicked / 100) * duration;
@@ -160,6 +162,7 @@ let dominantColor;
 let duration;
 let shuffle_state;
 
+const progressBar = document.getElementById('progress-bar-fill');
 const defaultColor = '#979797ea'
 const titleBar = document.getElementById('title-bar');
 const playlistButton = document.getElementById('playlist-button');
@@ -245,7 +248,7 @@ async function playPlaylist(playlistId, deviceId = null) {
   }
 
   try {
-    const response = await fetch('https://api.spotify.com/v1/me/player/play', {
+    const response = await fetch('http://localhost:3001/playPlaylist', {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${getAccessToken()}`,
@@ -257,18 +260,14 @@ async function playPlaylist(playlistId, deviceId = null) {
     if (response.ok) {
       console.log(`Playlist ${playlistId} is now playing.`);
     } else {
-      const errorData = await response.json();
-      console.error('Error playing playlist:', errorData);
-      window.electron.premiumRequiredMessage();
-
-      console.error('Status Code:', response.status);
-      console.error('Response Headers:', response.headers);
+      const errorData = await response.text(); // Read as text to handle non-JSON errors
+      console.error('Error response:', errorData); // Log error response
+      throw new Error(`Failed to play playlist: ${errorData}`);
     }
-  } catch (error) {
-    console.error('Request failed:', error);
-    window.electron.premiumRequiredMessage();
-
-  }
+    } catch (error){
+      console.error('Error to play playlist:', error);
+      window.electron.showError(`${error}`);
+    }
 }
 
 async function fetchLyrics() {
@@ -335,13 +334,14 @@ async function play() {
       }
     });
     if (!response.ok) {
-      throw new Error('Failed to play track');
+      const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to play track: ${errorData}`);
     }
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing track:', error);
-    window.electron.premiumRequiredMessage();
-  }
+    window.electron.showError(`${error}`);  }
 }
 
 async function pause() {
@@ -353,14 +353,15 @@ async function pause() {
       }
     });
     if (!response.ok) {
-      throw new Error('Failed to play previous track');
+      const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to pause track: ${errorData}`);
     }
     console.log('Track pausing...');
   } catch (error) {
     console.error('Error pausing track:', error);
     console.error('Error pausing track:', error.message);
-    window.electron.premiumRequiredMessage();
-  }
+    window.electron.showError(`${error}`);  }
 }
 
 async function next() {
@@ -372,13 +373,14 @@ async function next() {
       }
     });
     if (!response.ok) {
-      throw new Error('Failed to play next track');
+      const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to play next track: ${errorData}`);
     }
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing next track:', error);
-    window.electron.premiumRequiredMessage();
-  }
+    window.electron.showError(`${error}`);  }
 }
 
 async function previous() {
@@ -390,40 +392,43 @@ async function previous() {
       }
     });
     if (!response.ok) {
-      throw new Error('Failed to play previous track');
+      const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to play previous track: ${errorData}`);
     }
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing previous track:', error);
-    window.electron.premiumRequiredMessage();
-  }
+    window.electron.showError(`${error}`);  }
 }
 
 async function seek(position_ms) {
   try {
-    const response = await fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${position_ms}`, {
+    const response = await fetch(`http://localhost:3001/seek`, {
       method: 'PUT',
       headers: {
         'Authorization':`'Bearer ${getAccessToken()}`,
         'Content-Type': 'application/json'
-      }
+      }, 
+      body: JSON.stringify({ position_ms })
+
     });
     
-    if (!response.ok) {
-      const errorData = await response.json(); // Parse error response from Spotify
-      throw new Error(`Failed to change track progress: ${errorData.error.message}`);
-    }
-    console.log('seeking...')
-  } catch (error) {
-    console.error('Error seeking:', error);
-    window.electron.premiumRequiredMessage();
+    if (response.ok) {
+  } else {
+    const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to change position: ${errorData}`);
   }
+  } catch (error){
+    console.error('Error seeking:', error);
+    window.electron.showError(`${error}`);  }
 }
 
 async function setShuffle(state) {
 
   try {
-    const response = await fetch('https://api.spotify.com/v1/me/player/shuffle', {
+    const response = await fetch('http://localhost:3001/shuffle', {
       method: 'PUT',
       headers: {
           'Authorization': `Bearer ${getAccessToken()}`, 
@@ -435,12 +440,13 @@ async function setShuffle(state) {
   if (response.ok) {
       console.log(`Shuffle ${state ? 'enabled' : 'disabled'}.`);
   } else {
-      const errorData = await response.json();
-      throw new Error(`Failed to change set shuffle: ${errorData.error.message}`);
+    const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to set shuffle: ${errorData}`);
   }
   } catch (error){
-    console.error('Error seeking:', error);
-    window.electron.premiumRequiredMessage();
+    console.error('Error to set shuffle:', error);
+    window.electron.showError(`${error}`);
   }
     
 }
@@ -506,7 +512,6 @@ function updateLyricsButton() {
 }
 
 function updateProgressBar() {
-  const progressBar = document.getElementById('progress-bar-fill');
   const progressText = document.getElementById('progress');
   const durationText = document.getElementById('duration');
   if (duration && progress) {
@@ -572,8 +577,13 @@ function startDataUpdates() {
   setInterval(() => {
     fetchTrackInfo();
     fetchLyrics();
+    
+  }, 500);
+  setInterval(() => {
     updateUI();
-  }, 1000);
+    
+  }, 250);
+  
 }
 
 async function toggleLoginView() {

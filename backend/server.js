@@ -23,12 +23,12 @@ let accessToken;
 
 const playRateLimiter = RateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 100, // limit each IP to 60 requests per windowMs
+  max: 200, // limit each IP to 60 requests per windowMs
 });
 
 const lyricsRateLimiter = RateLimit({
   windowMs: 60 * 1000,
-  max: 80,
+  max: 160,
 })
 
 // Apply rate limiter to all endpoints that interact with Spotify API
@@ -63,6 +63,8 @@ console.log('Authorize URL:', authorizeUrl);
 //   });
 // }
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(express.json())
 
 // app.listen(port, (err) => {
 //   if (err && err.code === 'EADDRINUSE') {
@@ -378,6 +380,90 @@ async function getShuffleState() {
   }
 }
 
+app.put('/shuffle', async (req, res) => {
+  const { state } = req.body || {}; // Expecting { state: true/false, deviceId: 'your_device_id' }
+
+
+  if (typeof state !== 'boolean') {
+    return res.status(400).json({ error: 'Invalid asda sador missing state parameter' });
+}
+
+  try {
+      const response = await fetch(`https://api.spotify.com/v1/me/player/shuffle?state=${state}`, {
+          method: 'PUT',
+          headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+          }
+      });
+
+      const responseBody = await response.json().catch(() => ({})); // Handle non-JSON responses
+      console.log('Spotify API response:', responseBody); // Debug: Check API response
+
+      if (response.ok) {
+          res.json({ success: true });
+      } else {
+          res.status(response.status).json({ error: responseBody });
+      }
+  } catch (error) {
+      console.error('Error setting shuffle:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.put('/seek', async (req, res) => {
+  const { position_ms } = req.body || {}; // Expecting { state: true/false, deviceId: 'your_device_id' }
+
+  try {
+      const response = await fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${Math.floor(position_ms)}`, {
+          method: 'PUT',
+          headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+          }
+      });
+
+      const responseBody = await response.json().catch(() => ({})); // Handle non-JSON responses
+      console.log('Spotify API response:', responseBody); // Debug: Check API response
+
+      if (response.ok) {
+          res.json({ success: true });
+      } else {
+          res.status(response.status).json({ error: responseBody });
+      }
+  } catch (error) {
+      console.error('Error setting shuffle:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.put('/playPlaylist', async (req, res) => {
+  const { playlistId } = req.body || {}; // Expecting { state: true/false, deviceId: 'your_device_id' }
+  console.log(req.body)
+
+  try {
+      const response = await fetch(`https://api.spotify.com/v1/me/player/play?`, {
+          method: 'PUT',
+          headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(req.body)
+      });
+
+      const responseBody = await response.json().catch(() => ({})); // Handle non-JSON responses
+      console.log('Spotify API response:', responseBody); // Debug: Check API response
+
+      if (response.ok) {
+          res.json({ success: true });
+      } else {
+          res.status(response.status).json({ error: responseBody });
+      }
+  } catch (error) {
+      console.error('Error setting shuffle:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 
 
