@@ -269,8 +269,7 @@ async function playPlaylist(playlistId, deviceId = null) {
     }
   } catch (error) {
     console.error('Request failed:', error);
-    window.electron.premiumRequiredMessage();
-
+    window.electron.showError(`${error}`);
   }
 }
 
@@ -338,13 +337,14 @@ async function play() {
       }
     });
     if (!response.ok) {
-      throw new Error('Failed to play track');
+      const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to play track: ${errorData}`);
     }
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing track:', error);
-    window.electron.premiumRequiredMessage();
-  }
+    window.electron.showError(`${error}`);  }
 }
 
 async function pause() {
@@ -356,14 +356,15 @@ async function pause() {
       }
     });
     if (!response.ok) {
-      throw new Error('Failed to play previous track');
+      const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to pause track: ${errorData}`);
     }
     console.log('Track pausing...');
   } catch (error) {
     console.error('Error pausing track:', error);
     console.error('Error pausing track:', error.message);
-    window.electron.premiumRequiredMessage();
-  }
+    window.electron.showError(`${error}`);  }
 }
 
 async function next() {
@@ -375,13 +376,14 @@ async function next() {
       }
     });
     if (!response.ok) {
-      throw new Error('Failed to play next track');
+      const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to play next track: ${errorData}`);
     }
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing next track:', error);
-    window.electron.premiumRequiredMessage();
-  }
+    window.electron.showError(`${error}`);  }
 }
 
 async function previous() {
@@ -393,13 +395,14 @@ async function previous() {
       }
     });
     if (!response.ok) {
-      throw new Error('Failed to play previous track');
+      const errorData = await response.text(); // Read as text to handle non-JSON errors
+    console.error('Error response:', errorData); // Log error response
+    throw new Error(`Failed to play previous track: ${errorData}`);
     }
     console.log('Track playing...');
   } catch (error) {
     console.error('Error playing previous track:', error);
-    window.electron.premiumRequiredMessage();
-  }
+    window.electron.showError(`${error}`);  }
 }
 
 async function seek(position_ms) {
@@ -418,12 +421,11 @@ async function seek(position_ms) {
   } else {
     const errorData = await response.text(); // Read as text to handle non-JSON errors
     console.error('Error response:', errorData); // Log error response
-    throw new Error(`Failed to change set shuffle: ${errorData}`);
+    throw new Error(`Failed to change position: ${errorData}`);
   }
   } catch (error){
     console.error('Error seeking:', error);
-    window.electron.premiumRequiredMessage();
-  }
+    window.electron.showError(`${error}`);  }
 }
 
 async function setShuffle(state) {
@@ -443,11 +445,11 @@ async function setShuffle(state) {
   } else {
     const errorData = await response.text(); // Read as text to handle non-JSON errors
     console.error('Error response:', errorData); // Log error response
-    throw new Error(`Failed to change set shuffle: ${errorData}`);
+    throw new Error(`Failed to set shuffle: ${errorData}`);
   }
   } catch (error){
-    console.error('Error seeking:', error);
-    window.electron.premiumRequiredMessage();
+    console.error('Error to set shuffle:', error);
+    window.electron.showError(`${error}`);
   }
     
 }

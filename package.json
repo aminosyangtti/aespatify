@@ -36,8 +36,7 @@
       "target": "nsis",
       "icon": "build/logo_blk.png",
       "certificateFile": "{$CODE_SIGN_CERTIFICATE}",
-      "certificatePassword": "${CODE_SIGN_PASSWORD}",
-      "publisherName": "aminosyangtti"
+      "certificatePassword": "${CODE_SIGN_PASSWORD}"
     },
     "linux": {
       "target": [
