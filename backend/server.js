@@ -23,12 +23,12 @@ let accessToken;
 
 const playRateLimiter = RateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 100, // limit each IP to 60 requests per windowMs
+  max: 200, // limit each IP to 60 requests per windowMs
 });
 
 const lyricsRateLimiter = RateLimit({
   windowMs: 60 * 1000,
-  max: 80,
+  max: 160,
 })
 
 // Apply rate limiter to all endpoints that interact with Spotify API
@@ -413,8 +413,6 @@ app.put('/shuffle', async (req, res) => {
 
 app.put('/seek', async (req, res) => {
   const { position_ms } = req.body || {}; // Expecting { state: true/false, deviceId: 'your_device_id' }
-  console.log(req.body)
-  console.log(Math.round(position_ms))
 
   try {
       const response = await fetch(`https://api.spotify.com/v1/me/player/seek?position_ms=${Math.floor(position_ms)}`, {

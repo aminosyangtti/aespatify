@@ -50,6 +50,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const progressBarWidth = document.getElementById('progress-bar').clientWidth;
       const clickPositionX = event.offsetX;
       const percentageClicked = (clickPositionX / progressBarWidth) * 100;
+      progressBar.style.width = `${percentageClicked}%`;
+
     
         // Calculate seek position in milliseconds     //TO BE FIXED: console log shows wrong time -- also cant test without spotify premium
       const seekPositionMs = (percentageClicked / 100) * duration;
@@ -160,6 +162,7 @@ let dominantColor;
 let duration;
 let shuffle_state;
 
+const progressBar = document.getElementById('progress-bar-fill');
 const defaultColor = '#979797ea'
 const titleBar = document.getElementById('title-bar');
 const playlistButton = document.getElementById('playlist-button');
@@ -510,7 +513,6 @@ function updateLyricsButton() {
 }
 
 function updateProgressBar() {
-  const progressBar = document.getElementById('progress-bar-fill');
   const progressText = document.getElementById('progress');
   const durationText = document.getElementById('duration');
   if (duration && progress) {
@@ -576,8 +578,13 @@ function startDataUpdates() {
   setInterval(() => {
     fetchTrackInfo();
     fetchLyrics();
+    
+  }, 500);
+  setInterval(() => {
     updateUI();
-  }, 1000);
+    
+  }, 250);
+  
 }
 
 async function toggleLoginView() {
