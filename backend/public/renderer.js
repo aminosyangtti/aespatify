@@ -260,17 +260,14 @@ async function playPlaylist(playlistId, deviceId = null) {
     if (response.ok) {
       console.log(`Playlist ${playlistId} is now playing.`);
     } else {
-      const errorData = await response.json();
-      console.error('Error playing playlist:', errorData);
-      window.electron.premiumRequiredMessage();
-
-      console.error('Status Code:', response.status);
-      console.error('Response Headers:', response.headers);
+      const errorData = await response.text(); // Read as text to handle non-JSON errors
+      console.error('Error response:', errorData); // Log error response
+      throw new Error(`Failed to play playlist: ${errorData}`);
     }
-  } catch (error) {
-    console.error('Request failed:', error);
-    window.electron.showError(`${error}`);
-  }
+    } catch (error){
+      console.error('Error to play playlist:', error);
+      window.electron.showError(`${error}`);
+    }
 }
 
 async function fetchLyrics() {
