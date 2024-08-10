@@ -5,10 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "NODE_ENV=development electron .",
-    "changelog": "auto-changelog -p",
-    "pack": "electron-builder --dir",
-    "build": "electron-builder --win --linux",
-    "publish": "electron-builder --win --linux --publish always"
+    "changelog": "auto-changelog -p"
   },
   "dependencies": {
     "axios": "^0.21.1",
@@ -34,9 +31,7 @@
     "productName": "Aespatify",
     "win": {
       "target": "nsis",
-      "icon": "build/logo_blk.png",
-      "certificateFile": "{$CODE_SIGN_CERTIFICATE}",
-      "certificatePassword": "${CODE_SIGN_PASSWORD}"
+      "icon": "build/logo_blk.png"
     },
     "linux": {
       "target": [
@@ -49,8 +44,7 @@
       {
         "provider": "github",
         "owner": "aminosyangtti",
-        "repo": "aespatify",
-        "token": "${GH_TOKEN}"
+        "repo": "aespatify"
       }
     ],
     "directories": {
